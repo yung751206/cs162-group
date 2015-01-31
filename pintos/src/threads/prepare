@@ -8,10 +8,12 @@ import re
 dir_prefix = "../tests/threads/"
 ch1_tests = ["alarm-single", "alarm-multiple", "alarm-simultaneous", "alarm-priority", "alarm-zero", "alarm-negative", "priority-change"]
 ch2_tests = ["alarm-single", "alarm-multiple", "alarm-simultaneous", "alarm-priority", "alarm-zero", "alarm-negative", "priority-change", "priority-donate-one", "priority-donate-multiple", "priority-donate-multiple2", "priority-donate-nest", "priority-donate-sema", "priority-donate-lower", "priority-fifo", "priority-preempt", "priority-sema", "priority-condvar", "priority-donate-chain"]
+ch3_tests = ["alarm-single", "alarm-multiple", "alarm-simultaneous", "alarm-priority", "alarm-zero", "alarm-negative", "priority-change", "priority-donate-one", "priority-donate-multiple", "priority-donate-multiple2", "priority-donate-nest", "priority-donate-sema", "priority-donate-lower", "priority-fifo", "priority-preempt", "priority-sema", "priority-condvar", "priority-donate-chain", "mlfqs-load-1", "mlfqs-load-60", "mlfqs-load-avg", "mlfqs-recent-1", "mlfqs-fair-2", "mlfqs-fair-20", "mlfqs-nice-2", "mlfqs-nice-10", "mlfqs-block"]
 
 
 
-tests = [ "wait-bad-pid" , "wait-killed", "wait-simple", "wait-twice", "exec-multiple", "exec-once", "exec-missing", "exec-bad-ptr", "halt", "exit"]
+
+
 
 Makefile = "Make.tests"
 
@@ -35,7 +37,7 @@ if len(sys.argv) > 2:
     dir_prefix = sys.argv[2].strip()
     if dir_prefix[-1] != "/":
         dir_prefix = dir_prefix + "/"
-    if not os.path.exists(dir_prefix + tests[0] + ".c"):
+    if not os.path.exists(dir_prefix + ch3_tests[0] + ".c"):
         print "Could not find tests at given path %s" % (dir_prefix)
         exit()
 
@@ -48,13 +50,13 @@ if option == "ch1":
 if option == "ch2":
     shutil.copy2(dir_prefix + Makefile + ".ch2", dir_prefix + Makefile)
     shutil.copy2(dir_prefix + "tests.c.ch2", dir_prefix + "tests.c")
-    for test in ch1_tests:
+    for test in ch2_tests:
         shutil.copy2(dir_prefix + test + ".ck.ch2", dir_prefix + test + ".ck");
 
 if option == "ch3":
     shutil.copy2(dir_prefix + Makefile + ".orig", dir_prefix + Makefile)
     shutil.copy2(dir_prefix + "tests.c.orig", dir_prefix + "tests.c")
-    for test in tests:
+    for test in ch3_tests:
         shutil.copy2(dir_prefix + test + ".ck.orig", dir_prefix + test + ".ck");
 
 print "Set up tests for %s" % (option)
