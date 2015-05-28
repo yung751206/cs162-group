@@ -53,20 +53,25 @@ int kvserver_register_master(kvserver_t *server, int sockfd) {
  * be free()d.  If the KEY is in cache, take the value from there. Otherwise,
  * go to the store and update the value in the cache. */
 int kvserver_get(kvserver_t *server, char *key, char **value) {
-  return -1;
+	int ret = kvstore_get(&server->store,key,value);
+  return ret;
 }
 
 /* Checks if the given KEY, VALUE pair can be inserted into this server's
  * store. Returns 0 if it can, else a negative error code. */
 int kvserver_put_check(kvserver_t *server, char *key, char *value) {
-  return -1;
+	return kvstore_put_check(&server->store,key,value);
 }
 
 /* Inserts the given KEY, VALUE pair into this server's store and cache. Access
  * to the cache should be concurrent if the keys are in different cache sets.
  * Returns 0 if successful, else a negative error code. */
 int kvserver_put(kvserver_t *server, char *key, char *value) {
-  return -1;
+	int ret = kvserver_put_check(server,key,value);
+	if( ret < 0)
+		return ret;
+	ret = kvstore_put(&server->store,key,value);
+	return ret;
 }
 
 /* Checks if the given KEY can be deleted from this server's store.
@@ -114,8 +119,40 @@ void kvserver_handle_tpc(kvserver_t *server, kvmessage_t *reqmsg,
  * message. See the spec for details on logic and error messages. */
 void kvserver_handle_no_tpc(kvserver_t *server, kvmessage_t *reqmsg,
     kvmessage_t *respmsg) {
-  respmsg->type = RESP;
-  respmsg->message = ERRMSG_NOT_IMPLEMENTED;
+	char **value;
+	int ret;
+	switch( reqmsg->type){
+		case GETREQ:
+			printf("reqmsg: %s\n",reqmsg->key);
+			value = (char*)malloc(sizeof(char*));
+			ret = kvserver_get(server,reqmsg->key,value);
+			printf("ret: %d\n",ret);
+			if( ret <  0){
+				respmsg->type = RESP;
+				respmsg->message = GETMSG(ret);
+				break;
+			}
+			respmsg->type = GETRESP;
+			respmsg->key = reqmsg->key;
+			respmsg->value = *value;
+			respmsg->message = MSG_SUCCESS;
+			free(value);
+			break;
+		case PUTREQ:
+			ret = kvserver_put(server,reqmsg->key,reqmsg->value);
+			if( ret < 0){
+				respmsg->type = RESP;
+				respmsg->message = GETMSG(ret);
+				break;
+			}
+			respmsg->type = RESP;
+			respmsg->message = MSG_SUCCESS;
+			break;
+		default:
+  		respmsg->type = RESP;
+  		respmsg->message = ERRMSG_NOT_IMPLEMENTED;
+			break;
+	}
 }
 
 /* Generic entrypoint for this SERVER. Takes in a socket on SOCKFD, which
