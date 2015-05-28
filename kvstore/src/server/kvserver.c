@@ -77,14 +77,18 @@ int kvserver_put(kvserver_t *server, char *key, char *value) {
 /* Checks if the given KEY can be deleted from this server's store.
  * Returns 0 if it can, else a negative error code. */
 int kvserver_del_check(kvserver_t *server, char *key) {
-  return -1;
+	return kvstore_del_check(&server->store,key);
 }
 
 /* Removes the given KEY from this server's store and cache. Access to the
  * cache should be concurrent if the keys are in different cache sets. Returns
  * 0 if successful, else a negative error code. */
 int kvserver_del(kvserver_t *server, char *key) {
-  return -1;
+	int ret = kvserver_del_check(server,key);
+	if( ret < 0)
+		return ret;
+	ret = kvstore_del(&server->store,key);
+	return ret;
 }
 
 /* Returns an info string about SERVER including its hostname and port. */
@@ -147,6 +151,20 @@ void kvserver_handle_no_tpc(kvserver_t *server, kvmessage_t *reqmsg,
 			}
 			respmsg->type = RESP;
 			respmsg->message = MSG_SUCCESS;
+			break;
+		case DELREQ:
+			ret = kvserver_del(server,reqmsg->key);
+			if( ret < 0 ){
+				respmsg->type = RESP;
+				respmsg->message = GETMSG(ret);
+				break;
+			}
+			respmsg->type = RESP;
+			respmsg->message = MSG_SUCCESS;
+			break;
+		case INFO:
+			respmsg->type = INFO;
+			respmsg->message = kvserver_get_info_message(server);
 			break;
 		default:
   		respmsg->type = RESP;
