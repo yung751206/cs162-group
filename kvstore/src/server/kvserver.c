@@ -53,7 +53,15 @@ int kvserver_register_master(kvserver_t *server, int sockfd) {
  * be free()d.  If the KEY is in cache, take the value from there. Otherwise,
  * go to the store and update the value in the cache. */
 int kvserver_get(kvserver_t *server, char *key, char **value) {
-	int ret = kvstore_get(&server->store,key,value);
+	int ret;
+	ret = kvcache_get(&server->cache,key,value);
+	if( ret == 0 ){
+		return ret;
+	}
+	ret = kvstore_get(&server->store,key,value);
+	if(ret == 0){
+		kvcache_put(&server->cache,key,*value);
+	}
   return ret;
 }
 
@@ -69,6 +77,9 @@ int kvserver_put_check(kvserver_t *server, char *key, char *value) {
 int kvserver_put(kvserver_t *server, char *key, char *value) {
 	int ret = kvserver_put_check(server,key,value);
 	if( ret < 0)
+		return ret;
+	ret = kvcache_put(&server->cache,key,value);
+	if(ret < 0)
 		return ret;
 	ret = kvstore_put(&server->store,key,value);
 	return ret;

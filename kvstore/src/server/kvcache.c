@@ -14,7 +14,7 @@ int kvcache_init(kvcache_t *cache, unsigned int num_sets,
   int i;
   if (num_sets == 0 || elem_per_set == 0)
     return -1;
-  cache->sets = malloc(num_sets * sizeof(kvcacheset_t));
+  cache->sets = calloc( sizeof(kvcacheset_t),num_sets );
   if (cache->sets == NULL)
     return ENOMEM;
   cache->num_sets = num_sets;
@@ -30,7 +30,9 @@ int kvcache_init(kvcache_t *cache, unsigned int num_sets,
  * determined based on the hash of the KEY using the hash() function defined
  * within kvstore.h. */
 kvcacheset_t *get_cache_set(kvcache_t *cache, char *key) {
-  return &cache->sets[0];
+	unsigned long hashind = hash(key)%cache->num_sets;
+	printf("put key and value to cache %d\n",hashind);
+  return &cache->sets[hashind];
 }
 
 /* Attempts to retrieve KEY from CACHE. If successful, returns 0 and stores the

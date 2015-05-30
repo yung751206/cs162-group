@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include "uthash.h"
-
+#include "utlist.h"
 /* KVCacheSet represents a single distinct set of elements within a KVCache.
  *
  * Elements within a KVCacheSet may not be accessed/modified concurrently. The
@@ -18,17 +18,20 @@
  */
 
 /* An entry within the KVCacheSet. */
-struct kvcacheentry {
+typedef struct kvcacheentry {
   char *key;                      /* The entry's key. */
   char *value;                    /* The entry's value. */
   bool refbit;                    /* Used to determine if this entry has been used. */
-};
+	struct kvcacheentry *prev;
+	struct kvcacheentry *next;
+} kvcacheentry_t;
 
 /* A KVCacheSet. */
 typedef struct {
   unsigned int elem_per_set;      /* The max number of elements which can be stored in this set. */
   pthread_rwlock_t lock;          /* The lock which can be used to lock this set. */
   int num_entries;                /* The current number of entries in this set. */
+	kvcacheentry_t *head;
 } kvcacheset_t;
 
 int kvcacheset_init(kvcacheset_t *, unsigned int elem_per_set);
@@ -38,5 +41,5 @@ int kvcacheset_put(kvcacheset_t *, char *key, char *value);
 int kvcacheset_del(kvcacheset_t *, char *key);
 
 void kvcacheset_clear(kvcacheset_t *);
-
+void kvcacheset_traverse(kvcacheset_t *);
 #endif
